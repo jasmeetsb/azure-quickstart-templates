@@ -1,0 +1,70 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccounts_6qbz7mnn2rg3istandardsa_name": {
+            "type": "string",
+            "defaultValue": "6qbz7mnn2rg3istandardsa"
+        },
+        "storageAccounts_eeimemanm7jacstandardsa_name": {
+            "type": "string",
+            "defaultValue": "eeimemanm7jacstandardsa"
+        },
+        "storageAccounts_uh364tf754d4cstandardsa_name": {
+            "type": "string",
+            "defaultValue": "uh364tf754d4cstandardsa"
+        },
+        "storageAccounts_westusstandardsa_name": {
+            "type": "string",
+            "defaultValue": "westusstandardsa"
+        },
+        "jsbteststandarddsa5Type": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ]
+        }
+    },
+    "variables": {
+        "jsbteststandarddsa5Name": "[concat('jsbteststandarddsa5', uniqueString(resourceGroup().id))]"},
+    "resources": [
+      {
+            "comments": "Generalized from resource: /subscriptions/e0e3506a-4b64-4efc-8857-021a3a58dc9d/resourceGroups/ExampleResourceGroup/providers/Microsoft.Storage/storageAccounts/uh364tf754d4cstandardsa",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('storageAccounts_uh364tf754d4cstandardsa_name')]",
+            "apiVersion": "2015-06-15",
+            "location": "westus",
+            "properties": {
+                "accountType": "Standard_GRS"
+            }
+        },
+        {
+            "comments": "Generalized from resource: /subscriptions/e0e3506a-4b64-4efc-8857-021a3a58dc9d/resourceGroups/ExampleResourceGroup/providers/Microsoft.Storage/storageAccounts/westusstandardsa",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('storageAccounts_westusstandardsa_name')]",
+            "apiVersion": "2015-06-15",
+            "location": "westus",
+            "properties": {
+                "accountType": "Standard_GRS"
+            }
+        },
+        {
+            "name": "[variables('jsbteststandarddsa5Name')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "jsbteststandarddsa5"
+            },
+            "properties": {
+                "accountType": "[parameters('jsbteststandarddsa5Type')]"
+            }
+        }
+    ]
+}

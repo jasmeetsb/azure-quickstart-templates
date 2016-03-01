@@ -1,0 +1,170 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+      "jsbwintestName": {
+          "type": "string",
+          "minLength": 1
+      },
+      "jsbwintestAdminUserName": {
+          "type": "string",
+          "minLength": 1
+      },
+      "jsbwintestAdminPassword": {
+          "type": "securestring"
+      },
+      "jsbwintestWindowsOSVersion": {
+          "type": "string",
+          "defaultValue": "2012-R2-Datacenter",
+          "allowedValues": [
+              "2008-R2-SP1",
+              "2012-Datacenter",
+              "2012-R2-Datacenter",
+              "Windows-Server-Technical-Preview"
+          ]
+      }
+  },
+  "variables": {
+    "apiVersion": "2015-06-15",
+    "jsbtestPrefix": "10.0.0.0/16",
+    "jsbtestSubnet1Name": "Subnet-1",
+    "jsbtestSubnet1Prefix": "10.0.0.0/24",
+    "jsbtestSubnet2Name": "Subnet-2",
+    "jsbtestSubnet2Prefix": "10.0.1.0/24",
+    "jsbwintestImageOffer": "WindowsServer",
+    "jsbwintestImagePublisher": "MicrosoftWindowsServer",
+    "jsbwintestNicName": "[concat(parameters('jsbwintestName'), 'NetworkInterface')]",
+    "jsbwintestOSDiskName": "jsbwintestOSDisk",
+    "jsbwintestStorageAccountContainerName": "vhds",
+    "jsbwintestSubnetRef": "[concat(variables('jsbwintestVnetID'), '/subnets/', variables('jsbtestSubnet1Name'))]",
+    "jsbwintestVmSize": "Standard_D1",
+    "jsbwintestVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'jsbtest')]",
+    "storageAccountName": "[concat(resourceGroup().location, 'standardsa')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "accountType": "[parameters('storageAccountType')]"
+      }
+    },
+      {
+          "name": "jsbtest",
+          "type": "Microsoft.Network/virtualNetworks",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-06-15",
+          "dependsOn": [ ],
+          "tags": {
+              "displayName": "jsbtest"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "[variables('jsbtestPrefix')]"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "[variables('jsbtestSubnet1Name')]",
+                      "properties": {
+                          "addressPrefix": "[variables('jsbtestSubnet1Prefix')]"
+                      }
+                  },
+                  {
+                      "name": "[variables('jsbtestSubnet2Name')]",
+                      "properties": {
+                          "addressPrefix": "[variables('jsbtestSubnet2Prefix')]"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "name": "[variables('jsbwintestNicName')]",
+          "type": "Microsoft.Network/networkInterfaces",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-06-15",
+          "dependsOn": [
+              "[concat('Microsoft.Network/virtualNetworks/', 'jsbtest')]"
+          ],
+          "tags": {
+              "displayName": "jsbwintestNic"
+          },
+          "properties": {
+              "ipConfigurations": [
+                  {
+                      "name": "ipconfig1",
+                      "properties": {
+                          "privateIPAllocationMethod": "Dynamic",
+                          "subnet": {
+                              "id": "[variables('jsbwintestSubnetRef')]"
+                          }
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "name": "[parameters('jsbwintestName')]",
+          "type": "Microsoft.Compute/virtualMachines",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-06-15",
+          "dependsOn": [
+              "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+              "[concat('Microsoft.Network/networkInterfaces/', variables('jsbwintestNicName'))]"
+          ],
+          "tags": {
+              "displayName": "jsbwintest"
+          },
+          "properties": {
+              "hardwareProfile": {
+                  "vmSize": "[variables('jsbwintestVmSize')]"
+              },
+              "osProfile": {
+                  "computerName": "[parameters('jsbwintestName')]",
+                  "adminUsername": "[parameters('jsbwintestAdminUsername')]",
+                  "adminPassword": "[parameters('jsbwintestAdminPassword')]"
+              },
+              "storageProfile": {
+                  "imageReference": {
+                      "publisher": "[variables('jsbwintestImagePublisher')]",
+                      "offer": "[variables('jsbwintestImageOffer')]",
+                      "sku": "[parameters('jsbwintestWindowsOSVersion')]",
+                      "version": "latest"
+                  },
+                  "osDisk": {
+                      "name": "jsbwintestOSDisk",
+                      "vhd": {
+                          "uri": "[concat('http://', variables('storageAccountName'), '.blob.core.windows.net/', variables('jsbwintestStorageAccountContainerName'), '/', variables('jsbwintestOSDiskName'), '.vhd')]"
+                      },
+                      "caching": "ReadWrite",
+                      "createOption": "FromImage"
+                  }
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('jsbwintestNicName'))]"
+                      }
+                  ]
+              }
+          }
+      }
+  ]
+}
